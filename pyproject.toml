@@ -1,0 +1,24 @@
+[project]
+name = "connect4-server"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "bcrypt>=5.0.0",
+    "fastapi[standard]>=0.135.1",
+    "pyjwt>=2.11.0",
+    "websockets>=16.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=9.0.2", "pytest-cov>=7.0.0"]
+
+[tool.uv]
+package = true
+
+[tool.fastapi]
+entrypoint = "connect4_server.main:app"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
