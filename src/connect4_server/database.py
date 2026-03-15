@@ -4,7 +4,6 @@ import os
 from typing import Iterator
 from contextlib import contextmanager, asynccontextmanager
 
-
 from fastapi import FastAPI
 
 
@@ -26,8 +25,9 @@ async def lifespan(app: FastAPI):
     with get_db_connection() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS users (
-                id      INTEGER PRIMARY KEY AUTOINCREMENT,
-                name    TEXT    NOT NULL    UNIQUE
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                username        TEXT    NOT NULL    UNIQUE,
+                password_hash   TEXT    NOT NULL
             )
         """)
         conn.execute("""

@@ -1,45 +1,35 @@
+import os
+
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from connect4_core.disk import Disk
 from connect4_core.util import column_to_char
 
 from connect4_server.database import get_db_connection, lifespan
-from connect4_server.auth import create_token, get_current_user
+from connect4_server.auth import router as auth_router, get_current_user
 from connect4_server.game import Game
 
+FRONTEND_ORIGIN = os.environ.get("FRONTEND_ORIGIN", "http://localhost:5173")
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, root_path="/api")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[FRONTEND_ORIGIN],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(auth_router, prefix="/auth")
 
 
 @app.get("/")
 def root():
-    return {"message": "Hello, world"}
-
-
-@app.post("/signup")
-def signup(name: str):
-    with get_db_connection() as conn:
-        cursor = conn.execute("INSERT INTO users (name) VALUES (?)", (name,))
-        conn.commit()
-
-        new_user = conn.execute(
-            "SELECT * FROM users WHERE id = ?", (cursor.lastrowid,)
-        ).fetchone()
-    return new_user
-
-
-@app.post("/signin")
-def signin(name: str):
-    with get_db_connection() as conn:
-        user = conn.execute("SELECT * FROM users WHERE name = ?", (name,)).fetchone()
-
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid name")
-
-    token = create_token(user["id"], user["name"])
-    return {"token": token}
+    return RedirectResponse("/docs")
 
 
 @app.get("/user/me")
