@@ -1,19 +1,23 @@
+import asyncio
 import os
 
-from typing import Optional
+from collections import defaultdict
+from typing import Optional, AsyncIterable
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, EventSourceResponse
+from fastapi.sse import ServerSentEvent
 
-from connect4_core.disk import Disk
+from connect4_core import Disk
 from connect4_core.util import column_to_char
 
-from connect4_server.database import get_db_connection, lifespan
 from connect4_server.auth import router as auth_router, get_current_user
+from connect4_server.broadcaster import Update, Broadcaster
+from connect4_server.database import get_db_connection, lifespan
 from connect4_server.game import Game
 
-FRONTEND_ORIGIN = os.environ.get("FRONTEND_ORIGIN", "http://localhost:5173")
+FRONTEND_ORIGIN = os.environ.get("FRONTEND_ORIGIN", "http://127.0.0.1:5173")
 
 app = FastAPI(lifespan=lifespan, root_path="/api")
 
@@ -76,6 +80,9 @@ def get_game(game_id: int):
     return dict(game)
 
 
+broadcasters: dict[int, Broadcaster] = defaultdict(Broadcaster)
+
+
 @app.post("/game/{game_id}/play")
 async def play_column(
     game_id: int,
@@ -118,13 +125,13 @@ async def play_column(
             (game.moves, game.winner, game.forfeit, game.id),
         )
         conn.commit()
-
+        await broadcasters[game_id].publish("game-update", game.as_update())
         game = conn.execute("SELECT * FROM games WHERE id = ?", (game.id,)).fetchone()
     return game
 
 
 @app.post("/game/{game_id}/forfeit")
-def forfeit_game(
+async def forfeit_game(
     game_id: int,
     current_user: dict = Depends(get_current_user),
 ):
@@ -145,6 +152,25 @@ def forfeit_game(
             (game.winner, game.forfeit, game.id),
         )
         conn.commit()
+        await broadcasters[game_id].publish("game-update", game.as_update())
 
         game = conn.execute("SELECT * FROM games WHERE id = ?", (game.id,)).fetchone()
     return game
+
+
+@app.get("/game/{game_id}/stream", response_class=EventSourceResponse)
+async def stream(game_id: int, request: Request) -> AsyncIterable[Update]:
+    q = broadcasters[game_id].subscribe()
+
+    try:
+        while True:
+            if await request.is_disconnected():
+                break
+
+            try:
+                event, data = await asyncio.wait_for(q.get(), timeout=15)
+                yield ServerSentEvent(event=event, data=data)
+            except asyncio.TimeoutError:
+                yield ServerSentEvent(comment="keepalive")
+    finally:
+        broadcasters[game_id].unsubscribe(q)

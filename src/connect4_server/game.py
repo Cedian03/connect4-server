@@ -1,8 +1,10 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
-from connect4_core.disk import Disk
-from connect4_core.board import Board
+from connect4_core import Disk
+from connect4_core import Board
+
+from connect4_server.broadcaster import Update
 
 
 @dataclass
@@ -37,3 +39,10 @@ class Game:
 
     def user_to_play(self) -> int:
         return self.user_of_disk(self.board.disk_to_play())
+
+    def as_update(self) -> Update:
+        return Update(
+            moves=self.moves,
+            winner=self.winner,
+            forfeit=self.forfeit,
+        )
