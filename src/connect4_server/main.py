@@ -18,6 +18,7 @@ from connect4_server.database import get_db_connection, lifespan
 from connect4_server.game import Game
 
 FRONTEND_ORIGIN = os.environ.get("FRONTEND_ORIGIN", "http://127.0.0.1:5173")
+print(f"{FRONTEND_ORIGIN=}")
 
 app = FastAPI(lifespan=lifespan, root_path="/api")
 
@@ -33,7 +34,7 @@ app.include_router(auth_router, prefix="/auth")
 
 @app.get("/")
 def root():
-    return RedirectResponse("/docs")
+    return RedirectResponse(f"/{app.root_path}/docs")
 
 
 @app.get("/user/me")
