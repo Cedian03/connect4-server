@@ -43,6 +43,15 @@ def get_me(current_user: dict = Depends(get_current_user)):
     return get_user(current_user["sub"])
 
 
+@app.get("/user/search")
+def search_users(query: str):
+    with get_db_connection() as conn:
+        users = conn.execute(
+            "SELECT id, username FROM users WHERE username LIKE ?", (f"{query}%",)
+        ).fetchall()
+    return users
+
+
 @app.get("/user/{user_id}")
 def get_user(user_id: int):
     with get_db_connection() as conn:
