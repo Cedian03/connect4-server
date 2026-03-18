@@ -52,6 +52,17 @@ def get_user(user_id: int):
     return dict(user)
 
 
+@app.get("/user/{user_id}/games")
+def get_user_games(user_id: int):
+    with get_db_connection() as conn:
+        games = conn.execute(
+            "SELECT * FROM games WHERE as_x = ? OR as_o = ?",
+            (user_id, user_id),
+        ).fetchall()
+
+    return games
+
+
 @app.post("/game")
 def create_game(
     as_x: int,
