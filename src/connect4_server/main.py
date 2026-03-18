@@ -17,14 +17,15 @@ from connect4_server.broadcaster import Update, Broadcaster
 from connect4_server.database import get_db_connection, lifespan
 from connect4_server.game import Game
 
-FRONTEND_ORIGIN = os.environ.get("FRONTEND_ORIGIN", "http://127.0.0.1:5173")
-print(f"{FRONTEND_ORIGIN=}")
+FRONTEND_ORIGINS = os.environ.get(
+    "FRONTEND_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+).split(",")
 
 app = FastAPI(lifespan=lifespan, root_path="/api")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_ORIGIN],
+    allow_origins=FRONTEND_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
