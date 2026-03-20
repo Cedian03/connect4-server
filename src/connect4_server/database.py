@@ -1,7 +1,9 @@
+from connect4_core import Disk
+from sqlmodel import SQLModel
 import sqlite3
 import os
 
-from typing import Iterator
+from typing import Iterator, AsyncIterator
 from contextlib import contextmanager, asynccontextmanager
 
 from fastapi import FastAPI
@@ -41,3 +43,17 @@ async def lifespan(app: FastAPI):
             )
         """)
     yield
+
+
+class User(SQLModel):
+    id: int
+    username: str
+
+
+class Game(SQLModel):
+    id: int
+    as_x: int
+    as_o: int
+    moves: str
+    winner: Disk | None
+    forfeit: bool | None

@@ -1,3 +1,4 @@
+from connect4_core.exceptions import InvalidMoveError
 from connect4_core.util import parse_moves
 from typing import Optional, Self
 
@@ -39,7 +40,7 @@ class Board:
 
     def play(self, col: int):
         if (row := self.free_row_in(col)) is None:
-            raise Exception("TODO")
+            raise InvalidMoveError()
 
         self[(col, row)] = self.disk_to_play()
         self._turn += 1

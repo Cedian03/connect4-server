@@ -1,10 +1,23 @@
+from connect4_server.game.schemas import StreamUpdate
+from enum import StrEnum
 from dataclasses import dataclass, field
 from typing import Optional
 
 from connect4_core import Disk
 from connect4_core import Board
 
-from connect4_server.broadcaster import Update
+
+class Column(StrEnum):
+    A = "A"
+    B = "B"
+    C = "C"
+    D = "D"
+    E = "E"
+    F = "F"
+    G = "G"
+
+    def as_index(self) -> int:
+        return "ABCDEFG".index(self)
 
 
 @dataclass
@@ -40,8 +53,8 @@ class Game:
     def user_to_play(self) -> int:
         return self.user_of_disk(self.board.disk_to_play())
 
-    def as_update(self) -> Update:
-        return Update(
+    def as_update(self) -> StreamUpdate:
+        return StreamUpdate(
             moves=self.moves,
             winner=self.winner,
             forfeit=self.forfeit,
